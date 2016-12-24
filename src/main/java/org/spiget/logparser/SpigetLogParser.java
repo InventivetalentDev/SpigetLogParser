@@ -32,14 +32,15 @@ public class SpigetLogParser {
 	public Set<String>       ips         = new HashSet<>();
 	public Map<String, File> logFiles    = new HashMap<>();
 
-	public Stats globalStats = new Stats();
-	public Stats v1Stats     = new Stats();
-	public Stats v2Stats     = new Stats();
+	public Stats              globalStats  = new Stats();
+	public Map<String, Stats> versionStats = new HashMap<>();
 
 	public void dumpResult() {
 		System.out.println("Global: " + new Gson().toJson(globalStats));
-		System.out.println("v1:     " + new Gson().toJson(v1Stats));
-		System.out.println("v2:     " + new Gson().toJson(v2Stats));
+
+		for (Map.Entry<String, Stats> entry : versionStats.entrySet()) {
+			System.out.println(entry.getKey() + ": " + new Gson().toJson(entry.getValue()));
+		}
 	}
 
 	public SpigetLogParser init() throws IOException {
@@ -48,10 +49,14 @@ public class SpigetLogParser {
 		this.logPattern = Pattern.compile(this.config.get("log").getAsJsonObject().get("regex").getAsString(), Pattern.CASE_INSENSITIVE);
 		LogLine.dateFormat = new SimpleDateFormat("dd/MMM/yyyy:HH:mm:ss Z", Locale.ENGLISH);
 
+		versionStats.put("v1", new Stats());
+		versionStats.put("v2", new Stats());
+
 		long timestamp = System.currentTimeMillis() / 1000;
 		globalStats.timestamp = timestamp;
-		v1Stats.timestamp = timestamp;
-		v2Stats.timestamp = timestamp;
+		for (Stats stats : versionStats.values()) {
+			stats.timestamp = timestamp;
+		}
 
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			@Override
@@ -178,31 +183,21 @@ public class SpigetLogParser {
 				globalStats.increaseMethod(logLine.getMethod());
 				globalStats.increaseServer(server);
 
-				//// Version-Specific
-				// V1
-				if ("v1".equals(logLine.getApiVersion())) {
-					v1Stats.total++;
-					v1Stats.increaseUserAgent(logLine.getUserAgent());
-					v1Stats.increasePath(logLine.getPath());
-					v1Stats.increaseMethod(logLine.getMethod());
-					v1Stats.increaseServer(server);
-				}
-				// V2
-				if ("v2".equals(logLine.getApiVersion())) {
-					v2Stats.total++;
-					v2Stats.increaseUserAgent(logLine.getUserAgent());
-					v2Stats.increasePath(logLine.getPath());
-					v2Stats.increaseMethod(logLine.getMethod());
-					v2Stats.increaseServer(server);
+				// Version-Specific
+				Stats versionStats = this.versionStats.get(logLine.getApiVersion());
+				if (versionStats == null) {
+					log.error("Missing Stats object for version '" + logLine.getApiVersion() + "'");
+				} else {
+					versionStats.total++;
+					versionStats.increaseUserAgent(logLine.getUserAgent());
+					versionStats.increasePath(logLine.getPath());
+					versionStats.increaseMethod(logLine.getMethod());
+					versionStats.increaseServer(server);
 				}
 
 				if (!ips.contains(logLine.getAddress())) {
 					globalStats.unique++;
-					if ("v1".equals(logLine.getApiVersion())) {
-						v1Stats.unique++;
-					} else if ("v2".equals(logLine.getApiVersion())) {
-						v2Stats.unique++;
-					}
+					if (versionStats != null) { versionStats.unique++; }
 
 					ips.add(logLine.getAddress());
 				}
