@@ -58,19 +58,19 @@ public class SpigetLogParser {
 			stats.timestamp = timestamp;
 		}
 
-		Runtime.getRuntime().addShutdownHook(new Thread() {
-			@Override
-			public void run() {
-				try {
-					log.info("Disconnecting database...");
-					databaseClient.disconnect();
-				} catch (IOException e) {
-					log.warn("Failed to disconnect from database", e);
-				}
-			}
-		});
-
 		if (config.get("database.enabled").getAsBoolean()) {
+			Runtime.getRuntime().addShutdownHook(new Thread() {
+				@Override
+				public void run() {
+					try {
+						log.info("Disconnecting database...");
+						databaseClient.disconnect();
+					} catch (IOException e) {
+						log.warn("Failed to disconnect from database", e);
+					}
+				}
+			});
+
 			log.info("Initializing & testing database connection...");
 			long testStart = System.currentTimeMillis();
 			try {
