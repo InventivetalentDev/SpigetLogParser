@@ -29,6 +29,7 @@ public class LogLine {
 		this.url = url;
 		if ("-".equals(referrer)) { referrer = null; }
 		this.referrer = referrer;
+		if ("-".equals(userAgent)) { userAgent = null; }
 		this.userAgent = userAgent;
 
 		this.time = dateFormat.parse(time);
