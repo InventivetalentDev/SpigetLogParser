@@ -25,7 +25,57 @@
         "^(.*)([0-9]+)\\.([0-9]+)(\\.([0-9]+))?(?:-([0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*))?(?:\\+[0-9A-Za-z-]+)?$",
         "^(Java)\\/(.*)$",
         "^(ViaVersion) (.*)$"
-      ]
+      ],
+      "simplifiedPathRegex": {
+        "v1": [
+          "^\\/resources\\/for\\/([0-9A-Za-z-_.%]+)\\/([a-z])$",
+          "^\\/resources\\/for\\/([0-9A-Za-z-_.%]+)$",
+          "^\\/resources\\/([0-9A-Za-z-_%]+)\\/description$",
+          "^\\/resources\\/([0-9A-Za-z-_%]+)\\/content$",
+          "^\\/resources\\/([0-9A-Za-z-_%]+)\\/download$",
+          "^\\/resources\\/([0-9A-Za-z-_%]+)\\/versions\\/current",
+          "^\\/resources\\/([0-9A-Za-z-_%]+)\\/versions\\/([0-9A-Za-z-_.%]+)",
+          "^\\/resources\\/([0-9A-Za-z-_%]+)\\/versions",
+          "^\\/resources\\/([0-9A-Za-z-_%]+)\\/([a-z]+)",
+          "^\\/resources\\/([0-9A-Za-z-_%]+)",
+          "^\\/authors\\/([0-9A-Za-z-_%]+)\\/([a-z]+)",
+          "^\\/authors\\/([0-9A-Za-z-_%]+)",
+          "^\\/categories\\/([0-9A-Za-z-_%]+)\\/([a-z]+)",
+          "^\\/categories\\/([0-9A-Za-z-_%]+)",
+          "^\\/search\\/resources\\/([0-9A-Za-z-_%]+)$",
+          "^\\/search\\/authors\\/([0-9A-Za-z-_%]+)$",
+          "^\\/webhook\\/delete\\/([0-9A-Za-z]+)\\/([0-9A-Za-z]+)$"
+        ],
+        "v2": [
+          "^\\/resources\\/for\\/([0-9A-Za-z-_.%]+)$",
+          "^\\/resources\\/([0-9A-Za-z-_%]+)\\/download$",
+          "^\\/resources\\/([0-9A-Za-z-_%]+)\\/icon$",
+          "^\\/resources\\/([0-9A-Za-z-_%]+)\\/author$",
+          "^\\/resources\\/([0-9A-Za-z-_%]+)\\/versions\\/([0-9a-z]+)\\/download$",
+          "^\\/resources\\/([0-9A-Za-z-_%]+)\\/versions\\/([0-9a-z]+)$",
+          "^\\/resources\\/([0-9A-Za-z-_%]+)\\/versions$",
+          "^\\/resources\\/([0-9A-Za-z-_%]+)\\/updates\\/([0-9]+)$",
+          "^\\/resources\\/([0-9A-Za-z-_%]+)\\/updates$",
+          "^\\/resources\\/([0-9A-Za-z-_%]+)\\/reviews$",
+          "^\\/resources\\/([0-9A-Za-z-_%]+)\\/go$",
+          "^\\/resources\\/([0-9A-Za-z-_%]+)$",
+          "^\\/authors\\/([0-9A-Za-z-_%]+)\\/resources$",
+          "^\\/authors\\/([0-9A-Za-z-_%]+)\\/reviews$",
+          "^\\/authors\\/([0-9A-Za-z-_%]+)\\/avatar/([0-9A-Za-z-_%]+)$",
+          "^\\/authors\\/([0-9A-Za-z-_%]+)\\/avatar$",
+          "^\\/authors\\/([0-9A-Za-z-_%]+)\\/go$",
+          "^\\/authors\\/([0-9A-Za-z-_%]+)$",
+          "^\\/categories\\/([0-9A-Za-z-_%]+)\\/resources$",
+          "^\\/categories\\/([0-9A-Za-z-_%]+)\\/go$",
+          "^\\/categories\\/([0-9A-Za-z-_%]+)$",
+          "^\\/reviews\\/([0-9A-Za-z-_%]+)$",
+          "^\\/search\\/resources\\/([0-9A-Za-z-_%]+)$",
+          "^\\/search\\/authors\\/([0-9A-Za-z-_%]+)$",
+          "^\\/webhook\\/status\\/([0-9A-Za-z]+)$",
+          "^\\/webhook\\/delete\\/([0-9A-Za-z]+)\\/([0-9A-Za-z]+)$",
+          "^\\/metrics\\/requests\\/([0-9A-Za-z-_%]+)$"
+        ]
+      }
     }
   }
 }

@@ -1,20 +1,25 @@
 package org.spiget.logparser;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import lombok.extern.log4j.Log4j2;
+import org.apache.logging.log4j.Level;
 import org.spiget.database.DatabaseClient;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLConnection;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Locale;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.zip.GZIPInputStream;
 
 @Log4j2
 public class SpigetLogParser {
@@ -23,8 +28,19 @@ public class SpigetLogParser {
 	public DatabaseClient databaseClient;
 	public Pattern        logPattern;
 
-	public LogLine    currentLine = new LogLine();
-	public JsonObject parsedData  = new JsonObject();
+	public LogLine           currentLine = new LogLine();
+	public Set<String>       ips         = new HashSet<>();
+	public Map<String, File> logFiles    = new HashMap<>();
+
+	public Stats globalStats = new Stats();
+	public Stats v1Stats     = new Stats();
+	public Stats v2Stats     = new Stats();
+
+	public void dumpResult() {
+		System.out.println("Global: " + new Gson().toJson(globalStats));
+		System.out.println("v1:     " + new Gson().toJson(v1Stats));
+		System.out.println("v2:     " + new Gson().toJson(v2Stats));
+	}
 
 	public SpigetLogParser init() throws IOException {
 		this.config = new JsonParser().parse(new FileReader("config.json")).getAsJsonObject();
@@ -32,8 +48,10 @@ public class SpigetLogParser {
 		this.logPattern = Pattern.compile(this.config.get("log").getAsJsonObject().get("regex").getAsString(), Pattern.CASE_INSENSITIVE);
 		LogLine.dateFormat = new SimpleDateFormat("dd/MMM/yyyy:HH:mm:ss Z", Locale.ENGLISH);
 
-		this.parsedData.addProperty("total", 0);
-		this.parsedData.add("userAgents", new JsonObject());
+		long timestamp = System.currentTimeMillis() / 1000;
+		globalStats.timestamp = timestamp;
+		v1Stats.timestamp = timestamp;
+		v2Stats.timestamp = timestamp;
 
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			@Override
@@ -74,22 +92,129 @@ public class SpigetLogParser {
 		return this;
 	}
 
-	public void parse() throws IOException, ParseException {
-		//TODO...
-		//...
+	public void downloadLogs() {
+		log.info("Downloading logs...");
 
-		File currentLog = new File("D:\\downloads\\access.log");
-		try (BufferedReader reader = new BufferedReader(new FileReader(currentLog))) {
-			String line;
-			while ((line = reader.readLine()) != null) {
-				System.out.println(parseLine(line));
+		JsonObject auth = config.get("log").getAsJsonObject().get("auth").getAsJsonObject();
+		String authToken = auth.get("token").getAsString();
+		String authPass = auth.get("pass").getAsString();
+		for (JsonElement element : config.get("log").getAsJsonObject().get("servers").getAsJsonArray()) {
+			String server = element.getAsString();
+
+			try {
+				long downloadStart = System.currentTimeMillis();
+				log.info("Downloading log from " + server + "...");
+
+				URL url = new URL(String.format("http://%s/downloadAccessLog.php", server));
+				URLConnection connection = url.openConnection();
+				connection.addRequestProperty("X-Auth-Token", authToken);
+				connection.addRequestProperty("X-Auth-Pass", authPass);
+
+				if (connection instanceof HttpURLConnection) {
+					HttpURLConnection httpConnection = (HttpURLConnection) connection;
+					InputStream inputStream;
+					try {
+						inputStream = httpConnection.getInputStream();
+					} catch (IOException exception) {
+						inputStream = httpConnection.getErrorStream();
+					}
+					if (httpConnection.getResponseCode() != 200) {
+						log.warn("Failed to download log from " + server + ". Response Code " + httpConnection.getResponseCode());
+						try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
+							String line;
+							while ((line = reader.readLine()) != null) {
+								log.warn(line);
+							}
+						}
+						continue;
+					}
+
+					File tempFile = File.createTempFile("spiget-" + server + "-", null);
+					ReadableByteChannel byteChannel = Channels.newChannel(inputStream);
+					FileOutputStream outputStream = new FileOutputStream(tempFile);
+					outputStream.getChannel().transferFrom(byteChannel, 0, Long.MAX_VALUE);
+
+					outputStream.close();
+					byteChannel.close();
+
+					long downloadEnd = System.currentTimeMillis();
+
+					logFiles.put(server, tempFile);
+					log.info("Download successful (" + tempFile + ") " + ((downloadEnd - downloadStart) / 1000.0) + "s");
+				}
+			} catch (IOException e) {
+				log.log(Level.ERROR, "Exception while downloading log from " + server, e);
 			}
+		}
+
+		log.info("Downloaded logs.");
+	}
+
+	public void parse() throws IOException, ParseException {
+		log.info("Parsing logs...");
+		for (String server : logFiles.keySet()) {
+			log.info("Parsing " + server + "...");
+			parseFile(server, logFiles.get(server));
 		}
 	}
 
+	public void parseFile(String server, File file) throws IOException, ParseException {
+		long parseStart = System.currentTimeMillis();
+
+		GZIPInputStream inputStream = new GZIPInputStream(new FileInputStream(file));
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
+			String line;
+			while ((line = reader.readLine()) != null) {
+				LogLine logLine = parseLine(line);
+				if (logLine == null) {
+					//					log.warn("Failed to parse line:  " + line);
+					continue;
+				}
+
+				// Global
+				globalStats.total++;
+				globalStats.increaseUserAgent(logLine.getUserAgent());
+				globalStats.increasePath(logLine.getPath());
+				globalStats.increaseMethod(logLine.getMethod());
+				globalStats.increaseServer(server);
+
+				//// Version-Specific
+				// V1
+				if ("v1".equals(logLine.getApiVersion())) {
+					v1Stats.total++;
+					v1Stats.increaseUserAgent(logLine.getUserAgent());
+					v1Stats.increasePath(logLine.getPath());
+					v1Stats.increaseMethod(logLine.getMethod());
+					v1Stats.increaseServer(server);
+				}
+				// V2
+				if ("v2".equals(logLine.getApiVersion())) {
+					v2Stats.total++;
+					v2Stats.increaseUserAgent(logLine.getUserAgent());
+					v2Stats.increasePath(logLine.getPath());
+					v2Stats.increaseMethod(logLine.getMethod());
+					v2Stats.increaseServer(server);
+				}
+
+				if (!ips.contains(logLine.getAddress())) {
+					globalStats.unique++;
+					if ("v1".equals(logLine.getApiVersion())) {
+						v1Stats.unique++;
+					} else if ("v2".equals(logLine.getApiVersion())) {
+						v2Stats.unique++;
+					}
+
+					ips.add(logLine.getAddress());
+				}
+			}
+		}
+
+		long parseEnd = System.currentTimeMillis();
+
+		log.info("Parsed in " + ((parseEnd - parseStart) / 1000.0) + "s");
+	}
+
 	public LogLine parseLine(String line) throws ParseException {
-		System.out.println();
-		System.out.println(line);
 		if (line.isEmpty()) { return null; }
 
 		Matcher matcher = logPattern.matcher(line);
@@ -106,14 +231,30 @@ public class SpigetLogParser {
 		String referrer = matcher.group("referrer");
 		String userAgent = matcher.group("userAgent");
 
-		if ("500".equals(status)) {
-			log.warn("Found Response Code 500 for " + url);
-			log.warn(line);
+		if (!url.startsWith("/v")) {// Some other path that's not part of on API
+			return null;
 		}
 
-		currentLine = currentLine.update(address, time, method, url, status, bytesSent, referrer, userAgent);
+		if ("500".equals(status)) {
+			log.warn("Found Response Code 500 for " + url);
+			log.warn(line + "\n");
+		}
+		if (!"200".equals(status)) {
+			// Don't return anything, so we don't log invalid requests (or redirects)
+			return null;
+		}
+
+		//		System.out.println(line);
+
+		try {
+			currentLine = currentLine.update(address, time, method, url, status, bytesSent, referrer, userAgent);
+		} catch (Exception e) {
+			log.warn("Line update failed for " + line, e);
+		}
+
 		// Parse User-Agents
 		handleSpecialUserAgents(currentLine);
+		simplifyPath(currentLine);
 		return currentLine;
 	}
 
@@ -151,6 +292,57 @@ public class SpigetLogParser {
 		}
 
 		return line;
+	}
+
+	public LogLine simplifyPath(LogLine line) {
+		for (JsonElement object : config.get("log").getAsJsonObject()
+				.get("format").getAsJsonObject()
+				.get("simplifiedPathRegex").getAsJsonObject()
+				.get(line.getApiVersion())
+				.getAsJsonArray()) {
+			String regex = object.getAsString();
+			Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
+
+			String original = line.getPath();
+			String replaced = replaceGroups(pattern, original, "x");
+
+			if (!original.equals(replaced)) {
+				line.setPath(replaced);
+				// Break here, so we don't unnecessarily replace more than needed
+				break;
+			}
+
+		}
+
+		return line;
+	}
+
+	public void cleanup() {
+		logFiles.values().forEach(File::delete);
+	}
+
+	public String replaceGroups(Pattern pattern, String source, String replacement) {
+		Matcher m = pattern.matcher(source);
+		if (m.find()) {
+			String newString = "";
+			int lastEnd = 0;
+
+			// Build the string manually instead of just replacing all groups over and over,
+			// because the match-position moves with every replaced word
+			for (int i = 1; i < m.groupCount() + 1; i++) {
+				if (m.group(i).equals(replacement)) {
+					continue;
+				}
+
+				newString += source.substring(lastEnd, m.start(i));
+				newString += replacement;
+				lastEnd = m.end(i);
+			}
+			newString += source.substring(lastEnd, source.length());
+
+			return newString;
+		}
+		return source;
 	}
 
 }

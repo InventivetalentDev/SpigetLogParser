@@ -8,7 +8,12 @@ public class Main {
 	public static void main(String[] args) throws IOException, ParseException {
 		SpigetLogParser parser = new SpigetLogParser();
 		parser.init();
+		parser.downloadLogs();
 		parser.parse();
+
+		parser.dumpResult();
+
+		parser.cleanup();
 	}
 
 }
