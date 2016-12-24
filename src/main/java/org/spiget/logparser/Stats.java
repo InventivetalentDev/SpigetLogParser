@@ -14,7 +14,6 @@ public class Stats {
 	public Map<String, Integer> paths      = new HashMap<>();
 	public Map<String, Integer> methods    = new HashMap<>();
 	public Map<String, Integer> servers    = new HashMap<>();
-	public long timestamp;
 
 	public void increaseUserAgent(String userAgent) {
 		increaseMap(userAgents, userAgent);

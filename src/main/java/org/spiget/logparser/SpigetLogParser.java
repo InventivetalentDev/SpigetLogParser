@@ -52,11 +52,6 @@ public class SpigetLogParser {
 		versionStats.put("v1", new Stats());
 		versionStats.put("v2", new Stats());
 
-		long timestamp = System.currentTimeMillis() / 1000;
-		globalStats.timestamp = timestamp;
-		for (Stats stats : versionStats.values()) {
-			stats.timestamp = timestamp;
-		}
 
 		if (config.get("database.enabled").getAsBoolean()) {
 			Runtime.getRuntime().addShutdownHook(new Thread() {
@@ -314,7 +309,7 @@ public class SpigetLogParser {
 		Gson gson = new Gson();
 
 		JsonObject data = new JsonObject();
-		data.addProperty("timestamp", globalStats.timestamp);
+		data.addProperty("timestamp", System.currentTimeMillis() / 1000);
 		data.add("global", gson.toJsonTree(globalStats));
 
 		JsonObject versions = new JsonObject();
