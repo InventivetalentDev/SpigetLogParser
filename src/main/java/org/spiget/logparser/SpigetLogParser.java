@@ -66,7 +66,7 @@ public class SpigetLogParser {
 				System.exit(-1);
 				return null;
 			}
-		}else{
+		} else {
 			log.info("Database is disabled");
 		}
 
@@ -105,7 +105,7 @@ public class SpigetLogParser {
 		String userAgent = matcher.group("userAgent");
 
 		if ("500".equals(status)) {
-			log.warn("Found Response Code 500!");
+			log.warn("Found Response Code 500 for " + url);
 			log.warn(line);
 		}
 
