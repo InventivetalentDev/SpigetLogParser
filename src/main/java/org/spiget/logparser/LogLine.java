@@ -51,6 +51,13 @@ public class LogLine {
 		// Strip API version
 		this.path = this.path.substring(("/" + apiVersion).length());
 
+		// Add the initial slash if the request points to the API index (e.g. /v2)
+		if (this.path.isEmpty()) {
+			if (this.apiVersion != null && !this.apiVersion.isEmpty()) {
+				this.path = "/";
+			}
+		}
+
 		return this;
 	}
 
