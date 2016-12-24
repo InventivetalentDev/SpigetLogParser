@@ -1,5 +1,6 @@
 package org.spiget.logparser;
 
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import lombok.extern.log4j.Log4j2;
@@ -87,6 +88,7 @@ public class SpigetLogParser {
 	}
 
 	public LogLine parseLine(String line) throws ParseException {
+		System.out.println();
 		System.out.println(line);
 		if (line.isEmpty()) { return null; }
 
@@ -109,7 +111,46 @@ public class SpigetLogParser {
 			log.warn(line);
 		}
 
-		return (this.currentLine = currentLine.update(address, time, method, url, status, bytesSent, referrer, userAgent));
+		currentLine = currentLine.update(address, time, method, url, status, bytesSent, referrer, userAgent);
+		// Parse User-Agents
+		handleSpecialUserAgents(currentLine);
+		return currentLine;
+	}
+
+	public LogLine handleSpecialUserAgents(LogLine line) {
+		if (line.getUserAgent() == null) {
+			line.setUserAgent("unknown");
+			return line;
+		}
+
+		if (line.getReferrer() != null) {
+			// Internal Requests
+			if (line.getReferrer().startsWith("https://spiget.org")) {
+				line.setUserAgent("Spiget");
+				return line;
+			}
+		}
+
+		// Browsers
+		String lowerCaseUserAgent = line.getUserAgent().toLowerCase();
+		if (lowerCaseUserAgent.contains("mozilla") || lowerCaseUserAgent.contains("chrome") || lowerCaseUserAgent.contains("opera") || lowerCaseUserAgent.contains("applewebkit")) {
+			line.setUserAgent("default");
+			return line;
+		}
+
+		// Extra regexes
+		for (JsonElement object : config.get("log").getAsJsonObject()
+				.get("format").getAsJsonObject()
+				.get("truncateRegex")
+				.getAsJsonArray()) {
+			String regex = object.getAsString();
+			Matcher matcher = Pattern.compile(regex, Pattern.CASE_INSENSITIVE).matcher(line.getUserAgent());
+			if (matcher.find()) {
+				line.setUserAgent(matcher.group(1));
+			}
+		}
+
+		return line;
 	}
 
 }
