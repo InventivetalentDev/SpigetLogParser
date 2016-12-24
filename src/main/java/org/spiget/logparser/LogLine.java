@@ -15,6 +15,8 @@ public class LogLine {
 	private Date   time;
 	private String method;
 	private String url;
+	private String path;
+	private String parameters;
 	private int    status;
 	private int    bytesSent;
 	private String referrer;
@@ -31,6 +33,15 @@ public class LogLine {
 		this.time = dateFormat.parse(time);
 		this.status = Integer.parseInt(status);
 		this.bytesSent = Integer.parseInt(bytesSent);
+
+		if (url.contains("?")) {
+			String[] split = url.split("\\?");
+			this.path = split[0];
+			this.parameters = split[1];
+		} else {
+			this.path = url;
+			this.parameters = "";
+		}
 
 		return this;
 	}
