@@ -239,8 +239,6 @@ public class SpigetLogParser {
 			return null;
 		}
 
-		//		System.out.println(line);
-
 		try {
 			currentLine = currentLine.update(address, time, method, url, status, bytesSent, referrer, userAgent);
 		} catch (Exception e) {
@@ -310,6 +308,24 @@ public class SpigetLogParser {
 		}
 
 		return line;
+	}
+
+	public void saveToDatabase() {
+		Gson gson = new Gson();
+
+		JsonObject data = new JsonObject();
+		data.addProperty("timestamp", globalStats.timestamp);
+		data.add("global", gson.toJsonTree(globalStats));
+
+		JsonObject versions = new JsonObject();
+		for (Map.Entry<String, Stats> entry : versionStats.entrySet()) {
+			versions.add(entry.getKey(),gson.toJsonTree(entry.getValue()));
+		}
+		data.add("versions", versions);
+
+		System.out.println(data);
+
+		//TODO
 	}
 
 	public void cleanup() {

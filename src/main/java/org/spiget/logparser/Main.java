@@ -11,7 +11,7 @@ public class Main {
 		parser.downloadLogs();
 		parser.parse();
 
-		parser.dumpResult();
+		parser.saveToDatabase();
 
 		parser.cleanup();
 	}
