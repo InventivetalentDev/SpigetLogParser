@@ -17,6 +17,7 @@ public class LogLine {
 	private String url;
 	private String path;
 	private String parameters;
+	private String apiVersion;
 	private int    status;
 	private int    bytesSent;
 	private String referrer;
@@ -42,6 +43,12 @@ public class LogLine {
 			this.path = url;
 			this.parameters = "";
 		}
+
+		String[] versionSplit = url.split("/");
+		apiVersion = versionSplit[1];
+
+		// Strip API version
+		this.path = this.path.substring(("/" + apiVersion).length());
 
 		return this;
 	}
