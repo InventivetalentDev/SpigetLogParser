@@ -8,7 +8,7 @@
   "database.pass": "spiget",
   "database.db": "admin",
   "log": {
-    "regex": "(?<address>.+) - - \\[(?<timestamp>\\d{2}\\/[a-z]{3}\\/\\d{4}:\\d{2}:\\d{2}:\\d{2} (\\+|\\-)\\d{4})\\] ((\\\"(?<method>(GET|POST)) )(?<url>.+)(http\\/1\\.1\")) (?<status>\\d{3}) (?<bytesSent>\\d+) ([\"](?<referrer>(\\-)|(.+))[\"]) ([\"](?<userAgent>.+)[\"])",
+    "regex": "(?<address>.+) - - \\[(?<timestamp>\\d{2}\\/[a-z]{3}\\/\\d{4}:\\d{2}:\\d{2}:\\d{2} (\\+|\\-)\\d{4})\\] ((\\\"(?<method>(GET|POST)) )(?<url>.+)(http\\/1\\.1\")) (?<status>\\d{3}) (?<bytesSent>\\d+) ([\"](?<referrer>(\\-)|(.*))[\"]) ([\"](?<userAgent>.*)[\"])",
     "__regexLink": "https://regex101.com/r/4AxC4i/2",
     "dateFormat": "dd/MMM/yyyy:HH:mm:ss Z",
     "servers": [
