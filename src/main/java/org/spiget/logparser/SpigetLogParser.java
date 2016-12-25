@@ -163,6 +163,9 @@ public class SpigetLogParser {
 	}
 
 	public void parseFile(String server, File file) throws IOException, ParseException {
+		// MongoDB
+		server = server.replace(".", "_");
+
 		long parseStart = System.currentTimeMillis();
 		long lineCounter = 0;
 
@@ -285,6 +288,9 @@ public class SpigetLogParser {
 			}
 		}
 
+		// MongoDB
+		line.setUserAgent(line.getUserAgent().replace(".", "_"));
+
 		return line;
 	}
 
@@ -307,6 +313,9 @@ public class SpigetLogParser {
 			}
 
 		}
+
+		// MongoDB
+		line.setPath(line.getPath().replace(".", "_"));
 
 		return line;
 	}
