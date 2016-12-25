@@ -44,7 +44,8 @@
           "^\\/categories\\/([0-9A-Za-z-_%]+)",
           "^\\/search\\/resources\\/([0-9A-Za-z-_%]+)$",
           "^\\/search\\/authors\\/([0-9A-Za-z-_%]+)$",
-          "^\\/webhook\\/delete\\/([0-9A-Za-z]+)\\/([0-9A-Za-z]+)$"
+          "^\\/webhook\\/delete\\/([0-9A-Za-z]+)\\/([0-9A-Za-z]+)$",
+          "^\\/metrics\\/requests\\/([0-9A-Za-z-_%]+)$"
         ],
         "v2": [
           "^\\/resources\\/for\\/([0-9A-Za-z-_.%]+)$",
