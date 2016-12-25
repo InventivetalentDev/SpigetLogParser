@@ -52,7 +52,6 @@ public class SpigetLogParser {
 		versionStats.put("v1", new Stats());
 		versionStats.put("v2", new Stats());
 
-
 		if (config.get("database.enabled").getAsBoolean()) {
 			Runtime.getRuntime().addShutdownHook(new Thread() {
 				@Override
@@ -147,7 +146,12 @@ public class SpigetLogParser {
 			}
 		}
 
-		log.info("Downloaded logs.");
+		if (logFiles.isEmpty()) {
+			log.warn("Could not download any logs. Exiting.");
+			System.exit(0);
+		} else {
+			log.info("Downloaded logs.");
+		}
 	}
 
 	public void parse() throws IOException, ParseException {
@@ -314,7 +318,7 @@ public class SpigetLogParser {
 
 		JsonObject versions = new JsonObject();
 		for (Map.Entry<String, Stats> entry : versionStats.entrySet()) {
-			versions.add(entry.getKey(),gson.toJsonTree(entry.getValue()));
+			versions.add(entry.getKey(), gson.toJsonTree(entry.getValue()));
 		}
 		data.add("versions", versions);
 
