@@ -12,7 +12,10 @@
     "__regexLink": "https://regex101.com/r/4AxC4i/2",
     "dateFormat": "dd/MMM/yyyy:HH:mm:ss Z",
     "servers": [
-      "aqua.api.spiget.org"
+      {
+        "name": "aqua",
+        "url": "http://aqua.api.spiget.org/downloadAccessLog.php"
+      }
     ],
     "auth": {
       "token": "12345",

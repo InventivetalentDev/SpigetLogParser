@@ -97,14 +97,14 @@ public class SpigetLogParser {
 		JsonObject auth = config.get("log").getAsJsonObject().get("auth").getAsJsonObject();
 		String authToken = auth.get("token").getAsString();
 		String authPass = auth.get("pass").getAsString();
-		for (JsonElement element : config.get("log").getAsJsonObject().get("servers").getAsJsonArray()) {
-			String server = element.getAsString();
 
+		Server[] servers = new Gson().fromJson(config.get("log").getAsJsonObject().get("servers"), Server[].class);
+		for (Server server : servers) {
 			try {
 				long downloadStart = System.currentTimeMillis();
-				log.info("Downloading log from " + server + "...");
+				log.info("Downloading log from server " + server.getName() + "...");
 
-				URL url = new URL(String.format("http://%s/downloadAccessLog.php", server));
+				URL url = new URL(server.getUrl());
 				URLConnection connection = url.openConnection();
 				connection.addRequestProperty("X-Auth-Token", authToken);
 				connection.addRequestProperty("X-Auth-Pass", authPass);
@@ -118,7 +118,7 @@ public class SpigetLogParser {
 						inputStream = httpConnection.getErrorStream();
 					}
 					if (httpConnection.getResponseCode() != 200) {
-						log.warn("Failed to download log from " + server + ". Response Code " + httpConnection.getResponseCode());
+						log.warn("Failed to download log from " + server.getName() + " (" + server.getUrl() + ")" + ". Response Code " + httpConnection.getResponseCode());
 						try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
 							String line;
 							while ((line = reader.readLine()) != null) {
@@ -128,7 +128,7 @@ public class SpigetLogParser {
 						continue;
 					}
 
-					File tempFile = File.createTempFile("spiget-" + server + "-", null);
+					File tempFile = File.createTempFile("spiget-" + server.getName() + "-", null);
 					ReadableByteChannel byteChannel = Channels.newChannel(inputStream);
 					FileOutputStream outputStream = new FileOutputStream(tempFile);
 					outputStream.getChannel().transferFrom(byteChannel, 0, Long.MAX_VALUE);
@@ -138,11 +138,11 @@ public class SpigetLogParser {
 
 					long downloadEnd = System.currentTimeMillis();
 
-					logFiles.put(server, tempFile);
+					logFiles.put(server.getName(), tempFile);
 					log.info("Download successful (" + tempFile + ") " + ((downloadEnd - downloadStart) / 1000.0) + "s");
 				}
 			} catch (IOException e) {
-				log.log(Level.ERROR, "Exception while downloading log from " + server, e);
+				log.log(Level.ERROR, "Exception while downloading log from " + server.getName(), e);
 			}
 		}
 
