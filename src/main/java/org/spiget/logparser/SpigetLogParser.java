@@ -326,7 +326,9 @@ public class SpigetLogParser {
 
 		System.out.println(data);
 
-		//TODO
+		if (config.get("database.enabled").getAsBoolean()) {
+			databaseClient.insertMetricsData(data);
+		}
 	}
 
 	public void cleanup() {
