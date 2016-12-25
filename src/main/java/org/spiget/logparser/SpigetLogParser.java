@@ -164,6 +164,7 @@ public class SpigetLogParser {
 
 	public void parseFile(String server, File file) throws IOException, ParseException {
 		long parseStart = System.currentTimeMillis();
+		long lineCounter = 0;
 
 		GZIPInputStream inputStream = new GZIPInputStream(new FileInputStream(file));
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
@@ -174,6 +175,7 @@ public class SpigetLogParser {
 					//					log.warn("Failed to parse line:  " + line);
 					continue;
 				}
+				lineCounter++;
 
 				// Global
 				globalStats.total++;
@@ -205,7 +207,7 @@ public class SpigetLogParser {
 
 		long parseEnd = System.currentTimeMillis();
 
-		log.info("Parsed in " + ((parseEnd - parseStart) / 1000.0) + "s");
+		log.info("Parsed " + lineCounter + " lines in " + ((parseEnd - parseStart) / 1000.0) + "s");
 	}
 
 	public LogLine parseLine(String line) throws ParseException {
