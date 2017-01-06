@@ -24,6 +24,8 @@ import java.util.zip.GZIPInputStream;
 @Log4j2
 public class SpigetLogParser {
 
+	static final Pattern POPULARITY_PATTERN = Pattern.compile("/(authors|resources)/([0-9]+)(/.*)?");
+
 	public JsonObject     config;
 	public DatabaseClient databaseClient;
 	public Pattern        logPattern;
@@ -187,6 +189,14 @@ public class SpigetLogParser {
 				globalStats.increaseMethod(logLine.getMethod());
 				globalStats.increaseServer(server);
 
+				Matcher matcher = POPULARITY_PATTERN.matcher(logLine.getRawPath());
+				if (matcher.find()) {
+					String name = matcher.group(1);
+					String target = matcher.group(2);
+
+					globalStats.increasePopularity(name, target);
+				}
+
 				// Version-Specific
 				Stats versionStats = this.versionStats.get(logLine.getApiVersion());
 				if (versionStats == null) {
@@ -318,6 +328,21 @@ public class SpigetLogParser {
 		line.setPath(line.getPath().replace(".", "_"));
 
 		return line;
+	}
+
+	public void cleanUpData() {
+		// Remove all small popularity entries
+		int minPopularity = config.get("log").getAsJsonObject().get("minPopularity").getAsInt();
+		for (String key : globalStats.getPopularity().keySet()) {
+			Map<String, Integer> map = globalStats.getPopularity().get(key);
+			Iterator<Map.Entry<String, Integer>> iterator = map.entrySet().iterator();
+			while (iterator.hasNext()) {
+				Map.Entry<String, Integer> entry = iterator.next();
+				if (entry.getValue() < minPopularity) {
+					iterator.remove();
+				}
+			}
+		}
 	}
 
 	public void saveToDatabase() {

@@ -21,6 +21,7 @@
       "token": "12345",
       "pass": "54321"
     },
+    "minPopularity": 3,
     "format": {
       "date": "yyyyMMdd",
       "truncateRegex": [

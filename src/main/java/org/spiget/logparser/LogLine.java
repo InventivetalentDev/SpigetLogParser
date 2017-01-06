@@ -15,6 +15,7 @@ public class LogLine {
 	private Date   time;
 	private String method;
 	private String url;
+	private String rawPath;
 	private String path;
 	private String parameters;
 	private String apiVersion;
@@ -44,6 +45,7 @@ public class LogLine {
 			this.path = url;
 			this.parameters = "";
 		}
+		this.rawPath = this.path;
 
 		String[] versionSplit = url.split("/");
 		apiVersion = versionSplit[1];

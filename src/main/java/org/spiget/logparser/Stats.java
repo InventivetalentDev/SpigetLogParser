@@ -10,10 +10,11 @@ public class Stats {
 
 	public int total;
 	public int unique;
-	public Map<String, Integer> userAgents = new HashMap<>();
-	public Map<String, Integer> paths      = new HashMap<>();
-	public Map<String, Integer> methods    = new HashMap<>();
-	public Map<String, Integer> servers    = new HashMap<>();
+	public Map<String, Integer>              userAgents = new HashMap<>();
+	public Map<String, Integer>              paths      = new HashMap<>();
+	public Map<String, Integer>              methods    = new HashMap<>();
+	public Map<String, Integer>              servers    = new HashMap<>();
+	public Map<String, Map<String, Integer>> popularity = new HashMap<>();
 
 	public void increaseUserAgent(String userAgent) {
 		increaseMap(userAgents, userAgent);
@@ -29,6 +30,17 @@ public class Stats {
 
 	public void increaseServer(String server) {
 		increaseMap(servers, server);
+	}
+
+	public void increasePopularity(String name, String target) {
+		Map<String, Integer> map;
+		if (popularity.containsKey(name)) {
+			map = popularity.get(name);
+		} else {
+			map = new HashMap<>();
+		}
+		increaseMap(map, target);
+		popularity.put(name, map);
 	}
 
 	void increaseMap(Map<String, Integer> map, String key) {
